@@ -39,7 +39,16 @@ pub fn bevy_main_app() {
     #[cfg(not(target_arch = "wasm32"))]
     app.add_plugins(DefaultPlugins);
 
-    app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+    app.insert_resource::<RapierConfiguration>(RapierConfiguration {
+        timestep_mode: TimestepMode::Fixed {
+            dt: 1.0 / 30.0,
+            substeps: 1,
+        },
+        ..Default::default()
+    });
+
+    app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0).in_fixed_schedule())
+        .add_plugins(RapierDebugRenderPlugin::default())
         .init_resource::<BirdState>()
         .add_systems(Startup, (game_setup, ui_setup))
         .add_systems(Update, (camera_drag, bird_slingshot, game_state_control))
@@ -125,10 +134,10 @@ pub fn game_setup(
     let rows = 5;
     for row in 0..rows {
         let num_boxes = 4;
-        let y = -70.0 + (row as f32) * (box_size + 2.0);
+        let y = -70.0 + (row as f32) * (box_size + 10.0);
         let x_start = 120.0;
         for i in 0..num_boxes {
-            let x = x_start + i as f32 * (box_size + 2.0);
+            let x = x_start + i as f32 * (box_size + 10.0);
             commands.spawn((
                 SpriteBundle {
                     sprite: Sprite {
@@ -141,6 +150,7 @@ pub fn game_setup(
                 },
                 RigidBody::Dynamic,
                 Collider::cuboid(box_size / 2.0, box_size / 2.0),
+                Restitution::coefficient(0.6),
                 SelectableBox,
             ));
         }
