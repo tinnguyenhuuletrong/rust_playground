@@ -200,6 +200,11 @@ pub fn game_state_control(
             commands.entity(e).despawn_recursive();
         }
 
+        // By removing and re-adding the RapierContext, we are ensuring that the
+        // physics simulation is completely reset.
+        commands.remove_resource::<RapierContext>();
+        commands.insert_resource(RapierContext::default());
+
         game_setup(commands, meshes, materials);
         bird_state.dragging = false;
         bird_state.launched = false;
