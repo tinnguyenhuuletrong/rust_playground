@@ -9,6 +9,7 @@ bevy_rapier2d = { version = "0.25", features = [
     "wasm-bindgen",
     "enhanced-determinism",
 ] }
+sha2 = "0.10.8"
 
 
 [lib]

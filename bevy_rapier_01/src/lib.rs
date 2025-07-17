@@ -4,22 +4,33 @@ use bevy::render::mesh::Mesh;
 use bevy::sprite::ColorMaterial;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy_rapier2d::prelude::*;
+use sha2::{Digest, Sha256};
 
 #[derive(Component)]
-pub struct SelectableBox;
+struct SelectableBox;
 #[derive(Component)]
-pub struct Bird;
+struct Bird;
 
 #[derive(Resource, Default)]
-pub struct BirdState {
-    pub dragging: bool,
-    pub launched: bool,
+struct BirdState {
+    dragging: bool,
+    launched: bool,
 }
 
-pub const BIRD_START: Vec2 = Vec2::new(-350.0, -120.0);
-pub const BIRD_RADIUS: f32 = 14.0;
-pub const SLINGSHOT_ANCHOR: Vec2 = Vec2::new(-350.0, BIRD_START.y);
-pub const SLINGSHOT_MAX_DIST: f32 = 120.0;
+#[derive(Resource, Default, Debug)]
+struct PhysicsState {
+    hash: String,
+    step: u64,
+}
+
+#[derive(Component)]
+struct PhysicsStateText;
+
+const BIRD_START: Vec2 = Vec2::new(-350.0, -120.0);
+const BIRD_RADIUS: f32 = 14.0;
+const SLINGSHOT_ANCHOR: Vec2 = Vec2::new(-350.0, BIRD_START.y);
+const SLINGSHOT_MAX_DIST: f32 = 120.0;
+const PIXEL_PHYSIC_SCALE: f32 = 10_000.0; // 100 * 100
 
 pub fn bevy_main_app() {
     let mut app = App::new();
@@ -47,15 +58,20 @@ pub fn bevy_main_app() {
         ..Default::default()
     });
 
-    app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0).in_fixed_schedule())
+    app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default().in_fixed_schedule())
         .add_plugins(RapierDebugRenderPlugin::default())
         .init_resource::<BirdState>()
+        .init_resource::<PhysicsState>()
         .add_systems(Startup, (game_setup, ui_setup))
         .add_systems(Update, (camera_drag, bird_slingshot, game_state_control))
+        .add_systems(
+            FixedUpdate,
+            (physic_step_hash_check, ui_update_physic_state_text),
+        )
         .run();
 }
 
-pub fn ui_setup(mut commands: Commands) {
+fn ui_setup(mut commands: Commands) {
     commands.spawn(
         TextBundle::from_section(
             "Press R to restart",
@@ -72,13 +88,36 @@ pub fn ui_setup(mut commands: Commands) {
             ..Default::default()
         }),
     );
+
+    commands.spawn((
+        TextBundle::from_section(
+            "",
+            TextStyle {
+                font_size: 18.0,
+                color: Color::WHITE,
+                ..Default::default()
+            },
+        )
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            right: Val::Px(20.0),
+            bottom: Val::Px(10.0),
+            ..Default::default()
+        }),
+        PhysicsStateText,
+    ));
 }
 
-pub fn game_setup(
+fn game_setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
+    // By removing and re-adding the RapierContext, we are ensuring that the
+    // physics simulation is completely reset.
+    commands.remove_resource::<RapierContext>();
+    commands.insert_resource(RapierContext::default());
+
     commands.spawn(Camera2dBundle {
         transform: Transform::from_xyz(0.0, 100.0, 0.0),
         ..Default::default()
@@ -177,7 +216,7 @@ pub fn game_setup(
     ));
 }
 
-pub fn game_state_control(
+fn game_state_control(
     input: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
     q_boxes: Query<Entity, With<SelectableBox>>,
@@ -186,6 +225,7 @@ pub fn game_state_control(
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<ColorMaterial>>,
     mut bird_state: ResMut<BirdState>,
+    mut physic_state: ResMut<PhysicsState>,
 ) {
     if input.just_pressed(KeyCode::KeyR) {
         // Reset game state
@@ -200,18 +240,14 @@ pub fn game_state_control(
             commands.entity(e).despawn_recursive();
         }
 
-        // By removing and re-adding the RapierContext, we are ensuring that the
-        // physics simulation is completely reset.
-        commands.remove_resource::<RapierContext>();
-        commands.insert_resource(RapierContext::default());
-
         game_setup(commands, meshes, materials);
         bird_state.dragging = false;
         bird_state.launched = false;
+        *physic_state = PhysicsState::default();
     }
 }
 
-pub fn camera_drag(
+fn camera_drag(
     mut q_camera: Query<&mut Transform, With<Camera2d>>,
     mouse: Res<ButtonInput<MouseButton>>,
     mut last_pos: Local<Option<Vec2>>,
@@ -233,7 +269,7 @@ pub fn camera_drag(
     }
 }
 
-pub fn bird_slingshot(
+fn bird_slingshot(
     mut q_bird: Query<(&mut Transform, &mut Velocity, &mut ExternalImpulse), With<Bird>>,
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
@@ -263,10 +299,60 @@ pub fn bird_slingshot(
                 gizmos.line(start, end, Color::YELLOW);
             } else if state.dragging && mouse.just_released(MouseButton::Left) {
                 let launch_vec = -drag_vec;
-                impulse.impulse = launch_vec;
+                impulse.impulse = launch_vec * PIXEL_PHYSIC_SCALE;
                 state.dragging = false;
                 state.launched = true;
             }
+        }
+    }
+}
+
+fn physic_step_hash_check(
+    rapier_context: Res<RapierContext>,
+    rapier_config: Res<RapierConfiguration>,
+    q_dynamic_bodies: Query<&Transform, With<RigidBody>>,
+    mut physic_state: ResMut<PhysicsState>,
+) {
+    if !rapier_config.physics_pipeline_active {
+        return;
+    }
+    if rapier_context.bodies.len() <= 0 {
+        return;
+    }
+
+    if rapier_context.bodies.iter().all(|(_, b)| b.is_sleeping()) {
+        if !physic_state.hash.is_empty() {
+            return;
+        }
+        let mut state_str = String::new();
+        for transform in q_dynamic_bodies.iter() {
+            state_str.push_str(&format!(
+                "T:{:.3}, R:{:.3}",
+                transform.translation, transform.rotation
+            ));
+        }
+        let mut hasher = Sha256::new();
+        hasher.update(state_str.as_bytes());
+        let hash = hasher.finalize();
+        physic_state.hash = format!("{:x}", hash);
+    } else {
+        physic_state.step += 1;
+    }
+}
+
+fn ui_update_physic_state_text(
+    mut q_text: Query<&mut Text, With<PhysicsStateText>>,
+    physic_state: Res<PhysicsState>,
+) {
+    if physic_state.is_changed() {
+        let mut text = q_text.single_mut();
+        if !physic_state.hash.is_empty() {
+            text.sections[0].value = format!(
+                "Physic simulation steps: {}. sha256: {}",
+                physic_state.step, physic_state.hash
+            );
+        } else {
+            text.sections[0].value = format!("Physic simulation steps: {}", physic_state.step);
         }
     }
 }
