@@ -5,8 +5,6 @@ use crate::components::*;
 use crate::game::game_setup;
 use crate::resources::*;
 
-const BIRD_START: Vec2 = Vec2::new(-350.0, -120.0);
-const SLINGSHOT_ANCHOR: Vec2 = Vec2::new(-350.0, BIRD_START.y);
 const SLINGSHOT_MAX_DIST: f32 = 120.0;
 const PIXEL_PHYSIC_SCALE: f32 = 10_000.0; // 100 * 100
 
@@ -20,6 +18,7 @@ pub fn game_state_control(
     materials: ResMut<Assets<ColorMaterial>>,
     mut bird_state: ResMut<BirdState>,
     mut physic_state: ResMut<PhysicsState>,
+    bird_start: ResMut<BirdStart>,
 ) {
     if input.just_pressed(KeyCode::KeyR) {
         // Reset game state
@@ -34,7 +33,7 @@ pub fn game_state_control(
             commands.entity(e).despawn_recursive();
         }
 
-        game_setup(commands, meshes, materials);
+        game_setup(commands, meshes, materials, bird_start);
         bird_state.dragging = false;
         bird_state.launched = false;
         *physic_state = PhysicsState::default();
@@ -70,6 +69,7 @@ pub fn bird_slingshot(
     q_camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
     mut state: ResMut<BirdState>,
     mut gizmos: Gizmos,
+    bird_start: Res<BirdStart>,
 ) {
     let window = windows.single();
     let (camera, cam_transform) = q_camera.single();
@@ -81,15 +81,16 @@ pub fn bird_slingshot(
         .and_then(|c| camera.viewport_to_world_2d(cam_transform, c));
     if !state.launched {
         if let Some(cursor_pos) = cursor {
-            let drag_vec = (cursor_pos - SLINGSHOT_ANCHOR).clamp_length_max(SLINGSHOT_MAX_DIST);
+            let slingshot_anchor = bird_start.0;
+            let drag_vec = (cursor_pos - slingshot_anchor).clamp_length_max(SLINGSHOT_MAX_DIST);
             if mouse.pressed(MouseButton::Left) {
                 state.dragging = true;
-                transform.translation.x = SLINGSHOT_ANCHOR.x + drag_vec.x;
-                transform.translation.y = SLINGSHOT_ANCHOR.y + drag_vec.y;
+                transform.translation.x = slingshot_anchor.x + drag_vec.x;
+                transform.translation.y = slingshot_anchor.y + drag_vec.y;
                 vel.linvel = Vec2::ZERO;
                 impulse.impulse = Vec2::ZERO;
-                let start = SLINGSHOT_ANCHOR.extend(10.0);
-                let end = (SLINGSHOT_ANCHOR + -drag_vec).extend(10.0);
+                let start = slingshot_anchor.extend(10.0);
+                let end = (slingshot_anchor + -drag_vec).extend(10.0);
                 gizmos.line(start, end, Color::YELLOW);
             } else if state.dragging && mouse.just_released(MouseButton::Left) {
                 let launch_vec = -drag_vec;

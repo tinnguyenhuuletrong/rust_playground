@@ -10,6 +10,8 @@ bevy_rapier2d = { version = "0.25", features = [
     "enhanced-determinism",
 ] }
 sha2 = "0.10.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 
 [lib]

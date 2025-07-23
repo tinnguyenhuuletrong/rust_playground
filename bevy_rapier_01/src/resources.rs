@@ -1,4 +1,4 @@
-use bevy::prelude::Resource;
+use bevy::prelude::{Resource, Vec2};
 
 #[derive(Resource, Default)]
 pub struct BirdState {
@@ -10,4 +10,13 @@ pub struct BirdState {
 pub struct PhysicsState {
     pub hash: String,
     pub step: u64,
+}
+
+#[derive(Resource)]
+pub struct BirdStart(pub Vec2);
+
+impl Default for BirdStart {
+    fn default() -> Self {
+        BirdStart(Vec2::new(-350.0, -120.0))
+    }
 }

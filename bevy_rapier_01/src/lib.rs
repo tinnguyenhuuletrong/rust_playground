@@ -3,6 +3,7 @@ use bevy_rapier2d::prelude::*;
 
 mod components;
 mod game;
+mod level;
 mod physics;
 mod resources;
 mod systems;
@@ -44,6 +45,7 @@ pub fn bevy_main_app() {
         .add_plugins(RapierDebugRenderPlugin::default())
         .init_resource::<BirdState>()
         .init_resource::<PhysicsState>()
+        .init_resource::<BirdStart>()
         .add_systems(Startup, (game_setup, ui_setup))
         .add_systems(Update, (camera_drag, bird_slingshot, game_state_control))
         .add_systems(
