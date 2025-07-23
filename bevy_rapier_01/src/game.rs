@@ -4,8 +4,6 @@ use bevy::render::mesh::Mesh;
 use bevy::sprite::ColorMaterial;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy_rapier2d::prelude::*;
-use std::fs::File;
-use std::io::Read;
 
 use crate::components::*;
 use crate::level::LevelData;
@@ -25,16 +23,11 @@ pub fn game_setup(
     commands.insert_resource(RapierContext::default());
 
     commands.spawn(Camera2dBundle {
-        transform: Transform::from_xyz(0.0, 100.0, 0.0),
+        transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..Default::default()
     });
 
-    let mut file = File::open("assets/data/level_01.json").expect("Failed to open level file");
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)
-        .expect("Failed to read level file");
-    let level_data: LevelData =
-        serde_json::from_str(&contents).expect("Failed to parse level file");
+    let level_data = load_level_data();
 
     let ground_color = Color::rgb(0.3, 0.3, 0.3);
     let ground_size = Vec2::new(level_data.world_size[0] as f32, 20.0);
@@ -132,4 +125,19 @@ pub fn game_setup(
             _ => {}
         }
     }
+}
+
+fn load_level_data() -> LevelData {
+    // Version read from file
+    // let mut file = File::open("assets/data/level_01.json").expect("Failed to open level file");
+    // let mut contents = String::new();
+    // file.read_to_string(&mut contents)
+    //     .expect("Failed to read level file");
+
+    // Use embeded instead
+    let bytes = include_bytes!("../assets/data/level_01.json");
+    let contents = str::from_utf8(bytes).unwrap();
+    let level_data: LevelData =
+        serde_json::from_str(&contents).expect("Failed to parse level file");
+    level_data
 }
