@@ -1,5 +1,6 @@
 use bevy::math::primitives::Circle;
 use bevy::prelude::*;
+use bevy::render::camera::ScalingMode;
 use bevy::render::mesh::Mesh;
 use bevy::sprite::ColorMaterial;
 use bevy::sprite::MaterialMesh2dBundle;
@@ -16,22 +17,30 @@ pub fn game_setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut bird_start: ResMut<BirdStart>,
+    mut gizmos: Gizmos,
 ) {
     // By removing and re-adding the RapierContext, we are ensuring that the
     // physics simulation is completely reset.
     commands.remove_resource::<RapierContext>();
     commands.insert_resource(RapierContext::default());
 
-    commands.spawn(Camera2dBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..Default::default()
-    });
-
     let level_data = load_level_data();
+    let world_bound = level_data.world_bound;
+    let world_width = (world_bound[2] - world_bound[0]) as f32;
+    let world_height = (world_bound[3] - world_bound[1]) as f32;
 
+    let mut camera_bundle = Camera2dBundle::default();
+    camera_bundle.projection.scaling_mode = ScalingMode::FixedVertical(world_height);
+    camera_bundle.transform.translation.x = world_width / 2.0;
+    camera_bundle.transform.translation.y = -world_height / 2.0;
+    commands.spawn(camera_bundle);
+
+    let ground_y = level_data.ground_y as f32;
+    let ground_height = world_height - ground_y;
     let ground_color = Color::rgb(0.3, 0.3, 0.3);
-    let ground_size = Vec2::new(level_data.world_size[0] as f32, 20.0);
-    // Move ground down a bit
+    let ground_size = Vec2::new(world_width, ground_height);
+
+    let y_translation = -ground_y - (ground_height / 2.0);
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
@@ -39,7 +48,7 @@ pub fn game_setup(
                 custom_size: Some(ground_size),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(0.0, -170.0, 0.0),
+            transform: Transform::from_xyz(world_width / 2.0, y_translation, 0.0),
             ..Default::default()
         },
         Collider::cuboid(ground_size.x / 2.0, ground_size.y / 2.0),
@@ -47,7 +56,7 @@ pub fn game_setup(
 
     // Add left wall
     let wall_thickness = 20.0;
-    let wall_height = level_data.world_size[1] as f32;
+    let wall_height = world_height;
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
@@ -55,7 +64,7 @@ pub fn game_setup(
                 custom_size: Some(Vec2::new(wall_thickness, wall_height)),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(-(level_data.world_size[0] as f32) / 2.0, 120.0, 0.0),
+            transform: Transform::from_xyz(-wall_thickness / 2.0, -wall_height / 2.0, 0.0),
             ..Default::default()
         },
         Collider::cuboid(wall_thickness / 2.0, wall_height / 2.0),
@@ -69,7 +78,11 @@ pub fn game_setup(
                 custom_size: Some(Vec2::new(wall_thickness, wall_height)),
                 ..Default::default()
             },
-            transform: Transform::from_xyz((level_data.world_size[0] as f32) / 2.0, 120.0, 0.0),
+            transform: Transform::from_xyz(
+                world_width + wall_thickness / 2.0,
+                -wall_height / 2.0,
+                0.0,
+            ),
             ..Default::default()
         },
         Collider::cuboid(wall_thickness / 2.0, wall_height / 2.0),
@@ -80,7 +93,7 @@ pub fn game_setup(
     let box_size = 24.0;
 
     for entity in level_data.entities {
-        let position = Vec2::new(entity.position[0] as f32, entity.position[1] as f32);
+        let position = Vec2::new(entity.position[0] as f32, -(entity.position[1] as f32));
         match entity.entity_type.as_str() {
             "box" => {
                 commands.spawn((
@@ -125,6 +138,26 @@ pub fn game_setup(
             _ => {}
         }
     }
+
+    // Draw grid
+    let grid_color = Color::rgba(0.5, 0.5, 0.5, 1.0);
+    let cell_size = 50.0;
+    for i in 0..=(world_width / cell_size) as u32 {
+        let x = i as f32 * cell_size;
+        gizmos.line(
+            Vec3::new(x, 0.0, 0.0),
+            Vec3::new(x, -world_height, 0.0),
+            grid_color,
+        );
+    }
+    for i in 0..=(world_height / cell_size) as u32 {
+        let y = i as f32 * cell_size;
+        gizmos.line(
+            Vec3::new(0.0, -y, 0.0),
+            Vec3::new(world_width, -y, 0.0),
+            grid_color,
+        );
+    }
 }
 
 fn load_level_data() -> LevelData {
@@ -136,7 +169,7 @@ fn load_level_data() -> LevelData {
 
     // Use embeded instead
     let bytes = include_bytes!("../assets/data/level_01.json");
-    let contents = str::from_utf8(bytes).unwrap();
+    let contents = std::str::from_utf8(bytes).unwrap();
     let level_data: LevelData =
         serde_json::from_str(&contents).expect("Failed to parse level file");
     level_data

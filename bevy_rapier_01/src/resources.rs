@@ -17,6 +17,6 @@ pub struct BirdStart(pub Vec2);
 
 impl Default for BirdStart {
     fn default() -> Self {
-        BirdStart(Vec2::new(-350.0, -120.0))
+        BirdStart(Vec2::new(0.0, 0.0))
     }
 }

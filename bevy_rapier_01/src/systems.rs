@@ -19,6 +19,7 @@ pub fn game_state_control(
     mut bird_state: ResMut<BirdState>,
     mut physic_state: ResMut<PhysicsState>,
     bird_start: ResMut<BirdStart>,
+    gizmos: Gizmos,
 ) {
     if input.just_pressed(KeyCode::KeyR) {
         // Reset game state
@@ -33,7 +34,7 @@ pub fn game_state_control(
             commands.entity(e).despawn_recursive();
         }
 
-        game_setup(commands, meshes, materials, bird_start);
+        game_setup(commands, meshes, materials, bird_start, gizmos);
         bird_state.dragging = false;
         bird_state.launched = false;
         *physic_state = PhysicsState::default();

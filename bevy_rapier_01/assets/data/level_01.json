@@ -1,89 +1,130 @@
 {
-    "world_size": [1000, 600],
+    "world_bound": [
+        0,
+        0,
+        1000,
+        600
+    ],
+    "ground_y": 480,
     "entities": [
         {
             "entity_type": "box",
-            "position": [120, -70]
+            "position": [
+                570,
+                340
+            ]
         },
         {
             "entity_type": "box",
-            "position": [154, -70]
+            "position": [
+                604,
+                340
+            ]
         },
         {
             "entity_type": "box",
-            "position": [188, -70]
+            "position": [
+                638,
+                340
+            ]
         },
         {
             "entity_type": "box",
-            "position": [222, -70]
+            "position": [
+                672,
+                340
+            ]
         },
         {
             "entity_type": "box",
-            "position": [120, -36]
+            "position": [
+                570,
+                374
+            ]
         },
         {
             "entity_type": "box",
-            "position": [154, -36]
+            "position": [
+                604,
+                374
+            ]
         },
         {
             "entity_type": "box",
-            "position": [188, -36]
+            "position": [
+                638,
+                374
+            ]
         },
         {
             "entity_type": "box",
-            "position": [222, -36]
+            "position": [
+                672,
+                374
+            ]
         },
         {
             "entity_type": "box",
-            "position": [120, -2]
+            "position": [
+                570,
+                408
+            ]
         },
         {
             "entity_type": "box",
-            "position": [154, -2]
+            "position": [
+                604,
+                408
+            ]
         },
         {
             "entity_type": "box",
-            "position": [188, -2]
+            "position": [
+                638,
+                408
+            ]
         },
         {
             "entity_type": "box",
-            "position": [222, -2]
+            "position": [
+                672,
+                408
+            ]
         },
         {
             "entity_type": "box",
-            "position": [120, 32]
+            "position": [
+                570,
+                442
+            ]
         },
         {
             "entity_type": "box",
-            "position": [154, 32]
+            "position": [
+                604,
+                442
+            ]
         },
         {
             "entity_type": "box",
-            "position": [188, 32]
+            "position": [
+                638,
+                442
+            ]
         },
         {
             "entity_type": "box",
-            "position": [222, 32]
-        },
-        {
-            "entity_type": "box",
-            "position": [120, 66]
-        },
-        {
-            "entity_type": "box",
-            "position": [154, 66]
-        },
-        {
-            "entity_type": "box",
-            "position": [188, 66]
-        },
-        {
-            "entity_type": "box",
-            "position": [222, 66]
+            "position": [
+                672,
+                442
+            ]
         },
         {
             "entity_type": "bird",
-            "position": [-350, -120]
+            "position": [
+                150,
+                380
+            ]
         }
     ]
 }

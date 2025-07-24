@@ -3,7 +3,8 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct LevelData {
-    pub world_size: [u32; 2],
+    pub world_bound: [i32; 4], // left, top, right, bottom
+    pub ground_y: i32,
     pub entities: Vec<EntityData>,
 }
 
