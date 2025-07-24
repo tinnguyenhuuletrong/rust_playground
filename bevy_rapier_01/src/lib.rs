@@ -12,7 +12,7 @@ mod ui;
 use game::game_setup;
 use physics::physic_step_hash_check;
 use resources::*;
-use systems::{bird_slingshot, camera_drag, game_state_control};
+use systems::{bird_slingshot, camera_drag, draw_grid, game_state_control};
 use ui::{ui_setup, ui_update_physic_state_text};
 
 pub fn bevy_main_app() {
@@ -47,7 +47,10 @@ pub fn bevy_main_app() {
         .init_resource::<PhysicsState>()
         .init_resource::<BirdStart>()
         .add_systems(Startup, (game_setup, ui_setup))
-        .add_systems(Update, (camera_drag, bird_slingshot, game_state_control))
+        .add_systems(
+            Update,
+            (camera_drag, bird_slingshot, game_state_control, draw_grid),
+        )
         .add_systems(
             FixedUpdate,
             (physic_step_hash_check, ui_update_physic_state_text),

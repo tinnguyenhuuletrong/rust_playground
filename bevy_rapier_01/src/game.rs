@@ -17,7 +17,6 @@ pub fn game_setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut bird_start: ResMut<BirdStart>,
-    mut gizmos: Gizmos,
 ) {
     // By removing and re-adding the RapierContext, we are ensuring that the
     // physics simulation is completely reset.
@@ -55,7 +54,7 @@ pub fn game_setup(
     ));
 
     // Add left wall
-    let wall_thickness = 20.0;
+    let wall_thickness = 50.0;
     let wall_height = world_height;
     commands.spawn((
         SpriteBundle {
@@ -64,7 +63,7 @@ pub fn game_setup(
                 custom_size: Some(Vec2::new(wall_thickness, wall_height)),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(-wall_thickness / 2.0, -wall_height / 2.0, 0.0),
+            transform: Transform::from_xyz(wall_thickness / 2.0, -wall_height / 2.0, 0.0),
             ..Default::default()
         },
         Collider::cuboid(wall_thickness / 2.0, wall_height / 2.0),
@@ -79,7 +78,7 @@ pub fn game_setup(
                 ..Default::default()
             },
             transform: Transform::from_xyz(
-                world_width + wall_thickness / 2.0,
+                world_width - wall_thickness / 2.0,
                 -wall_height / 2.0,
                 0.0,
             ),
@@ -92,7 +91,7 @@ pub fn game_setup(
     let box_color = Color::rgb(0.7, 0.4, 0.2);
     let box_size = 24.0;
 
-    for entity in level_data.entities {
+    for entity in &level_data.entities {
         let position = Vec2::new(entity.position[0] as f32, -(entity.position[1] as f32));
         match entity.entity_type.as_str() {
             "box" => {
@@ -138,26 +137,7 @@ pub fn game_setup(
             _ => {}
         }
     }
-
-    // Draw grid
-    let grid_color = Color::rgba(0.5, 0.5, 0.5, 1.0);
-    let cell_size = 50.0;
-    for i in 0..=(world_width / cell_size) as u32 {
-        let x = i as f32 * cell_size;
-        gizmos.line(
-            Vec3::new(x, 0.0, 0.0),
-            Vec3::new(x, -world_height, 0.0),
-            grid_color,
-        );
-    }
-    for i in 0..=(world_height / cell_size) as u32 {
-        let y = i as f32 * cell_size;
-        gizmos.line(
-            Vec3::new(0.0, -y, 0.0),
-            Vec3::new(world_width, -y, 0.0),
-            grid_color,
-        );
-    }
+    commands.insert_resource(level_data);
 }
 
 fn load_level_data() -> LevelData {

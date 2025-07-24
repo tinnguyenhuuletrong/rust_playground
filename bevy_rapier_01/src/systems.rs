@@ -3,6 +3,7 @@ use bevy_rapier2d::prelude::*;
 
 use crate::components::*;
 use crate::game::game_setup;
+use crate::level::LevelData;
 use crate::resources::*;
 
 const SLINGSHOT_MAX_DIST: f32 = 120.0;
@@ -19,7 +20,6 @@ pub fn game_state_control(
     mut bird_state: ResMut<BirdState>,
     mut physic_state: ResMut<PhysicsState>,
     bird_start: ResMut<BirdStart>,
-    gizmos: Gizmos,
 ) {
     if input.just_pressed(KeyCode::KeyR) {
         // Reset game state
@@ -33,8 +33,9 @@ pub fn game_state_control(
         for e in q_camera.iter() {
             commands.entity(e).despawn_recursive();
         }
+        commands.remove_resource::<LevelData>();
 
-        game_setup(commands, meshes, materials, bird_start, gizmos);
+        game_setup(commands, meshes, materials, bird_start);
         bird_state.dragging = false;
         bird_state.launched = false;
         *physic_state = PhysicsState::default();
@@ -99,6 +100,33 @@ pub fn bird_slingshot(
                 state.dragging = false;
                 state.launched = true;
             }
+        }
+    }
+}
+
+pub fn draw_grid(mut gizmos: Gizmos, level_data: Option<Res<LevelData>>) {
+    if let Some(level_data) = level_data {
+        let world_bound = level_data.world_bound;
+        let world_width = (world_bound[2] - world_bound[0]) as f32;
+        let world_height = (world_bound[3] - world_bound[1]) as f32;
+        let grid_color = Color::rgba(0.25, 0.25, 0.25, 0.25);
+        let cell_size = 50.0;
+        let z = 0.0;
+        for i in 0..=(world_width / cell_size) as u32 {
+            let x = i as f32 * cell_size;
+            gizmos.line(
+                Vec3::new(x, 0.0, z),
+                Vec3::new(x, -world_height, z),
+                grid_color,
+            );
+        }
+        for i in 0..=(world_height / cell_size) as u32 {
+            let y = i as f32 * cell_size;
+            gizmos.line(
+                Vec3::new(0.0, -y, z),
+                Vec3::new(world_width, -y, z),
+                grid_color,
+            );
         }
     }
 }

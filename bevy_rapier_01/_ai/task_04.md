@@ -54,3 +54,21 @@
 - The camera now automatically adjusts its view to frame the entire level, with the ground properly aligned to the bottom of the viewport.
 - A visual grid, drawn with gizmos, has been added to aid in debugging and visualizing the coordinate system.
 - Fixed a critical bug in the ground placement calculation, ensuring a solid and correctly positioned play area.
+
+##Iter 03
+###Target
+- Refactor the grid drawing logic to ensure it's drawn every frame, not just once during setup.
+
+###Plan
+- Modify `game_setup` in `src/game.rs` to load the `LevelData` and insert it as a Bevy resource, removing the grid drawing logic from the setup function.
+- Update `LevelData` in `src/level.rs` to derive `Resource` and `Clone` so it can be used as a Bevy resource.
+- Create a new `draw_grid` system in `src/systems.rs` that runs every frame, reading the `LevelData` resource and using `Gizmos` to draw the grid.
+- Register the new `draw_grid` system in `src/lib.rs` to run during the `Update` stage.
+- Update `game_state_control` in `src/systems.rs` to remove the `LevelData` resource on game reset to ensure a clean state for the next run.
+
+###Result
+- The grid drawing logic is now correctly encapsulated in its own system (`draw_grid`), which runs every frame, guaranteeing the grid is always visible.
+- `LevelData` is now managed as a proper Bevy resource, making it cleanly accessible to any system that requires it.
+- The `game_setup` function has been streamlined, with its responsibility now focused purely on the initial creation of level objects.
+- The game's reset functionality is more robust, as it now correctly cleans up the `LevelData` resource.
+- The overall code structure is more modular and aligns better with Bevy's entity-component-system (ECS) architecture.
