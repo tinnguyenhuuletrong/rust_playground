@@ -3,7 +3,7 @@ use bevy_rapier2d::prelude::*;
 
 mod components;
 mod game;
-mod level;
+pub mod level;
 mod physics;
 mod resources;
 mod systems;

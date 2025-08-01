@@ -11,6 +11,7 @@ use crate::level::LevelData;
 use crate::resources::BirdStart;
 
 const BIRD_RADIUS: f32 = 14.0;
+const UNIT_SIZE: f32 = 24.0;
 
 pub fn game_setup(
     mut commands: Commands,
@@ -25,21 +26,24 @@ pub fn game_setup(
 
     let level_data = load_level_data();
     let world_bound = level_data.world_bound;
-    let world_width = (world_bound[2] - world_bound[0]) as f32;
-    let world_height = (world_bound[3] - world_bound[1]) as f32;
+    let image_width = (world_bound[2] - world_bound[0]) as f32;
+    let image_height = (world_bound[3] - world_bound[1]) as f32;
+    let world_width = image_width * UNIT_SIZE;
+    let world_height = image_height * UNIT_SIZE;
+    let wall_thickness = 50.0;
+    let wall_tall = world_height * 2.0;
 
     let mut camera_bundle = Camera2dBundle::default();
-    camera_bundle.projection.scaling_mode = ScalingMode::FixedVertical(world_height);
+    camera_bundle.projection.scaling_mode =
+        ScalingMode::FixedHorizontal(world_width + wall_thickness);
     camera_bundle.transform.translation.x = world_width / 2.0;
-    camera_bundle.transform.translation.y = -world_height / 2.0;
+    camera_bundle.transform.translation.y = world_height;
     commands.spawn(camera_bundle);
 
-    let ground_y = level_data.ground_y as f32;
-    let ground_height = world_height - ground_y;
+    let ground_height = 50.0;
     let ground_color = Color::rgb(0.3, 0.3, 0.3);
     let ground_size = Vec2::new(world_width, ground_height);
 
-    let y_translation = -ground_y - (ground_height / 2.0);
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
@@ -47,26 +51,23 @@ pub fn game_setup(
                 custom_size: Some(ground_size),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(world_width / 2.0, y_translation, 0.0),
+            transform: Transform::from_xyz(world_width / 2.0, ground_height / 2.0, 0.0),
             ..Default::default()
         },
         Collider::cuboid(ground_size.x / 2.0, ground_size.y / 2.0),
     ));
 
-    // Add left wall
-    let wall_thickness = 50.0;
-    let wall_height = world_height;
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
                 color: ground_color,
-                custom_size: Some(Vec2::new(wall_thickness, wall_height)),
+                custom_size: Some(Vec2::new(wall_thickness, wall_tall)),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(wall_thickness / 2.0, -wall_height / 2.0, 0.0),
+            transform: Transform::from_xyz(-wall_thickness / 2.0, wall_tall / 2.0, 0.0),
             ..Default::default()
         },
-        Collider::cuboid(wall_thickness / 2.0, wall_height / 2.0),
+        Collider::cuboid(wall_thickness / 2.0, wall_tall / 2.0),
         Restitution::coefficient(0.8),
     ));
     // Add right wall
@@ -74,25 +75,31 @@ pub fn game_setup(
         SpriteBundle {
             sprite: Sprite {
                 color: ground_color,
-                custom_size: Some(Vec2::new(wall_thickness, wall_height)),
+                custom_size: Some(Vec2::new(wall_thickness, wall_tall)),
                 ..Default::default()
             },
             transform: Transform::from_xyz(
-                world_width - wall_thickness / 2.0,
-                -wall_height / 2.0,
+                world_width + wall_thickness / 2.0,
+                wall_tall / 2.0,
                 0.0,
             ),
             ..Default::default()
         },
-        Collider::cuboid(wall_thickness / 2.0, wall_height / 2.0),
+        Collider::cuboid(wall_thickness / 2.0, wall_tall / 2.0),
         Restitution::coefficient(0.8),
     ));
 
     let box_color = Color::rgb(0.7, 0.4, 0.2);
-    let box_size = 24.0;
+    let box_size = UNIT_SIZE;
 
     for entity in &level_data.entities {
-        let position = Vec2::new(entity.position[0] as f32, -(entity.position[1] as f32));
+        let px = entity.position[0] as f32;
+        let py = entity.position[1] as f32;
+
+        let world_x = px * box_size + box_size / 2.0;
+        let world_y = ground_height + (image_height - 1.0 - py) * box_size + box_size / 2.0;
+        let position = Vec2::new(world_x, world_y);
+
         match entity.entity_type.as_str() {
             "box" => {
                 commands.spawn((
@@ -124,11 +131,7 @@ pub fn game_setup(
                     },
                     RigidBody::Dynamic,
                     Collider::ball(BIRD_RADIUS),
-                    Restitution::coefficient(0.6),
-                    Damping {
-                        linear_damping: 0.2,
-                        angular_damping: 0.2,
-                    },
+                    Restitution::coefficient(1.2),
                     Bird,
                     Velocity::zero(),
                     ExternalImpulse::default(),
@@ -141,13 +144,6 @@ pub fn game_setup(
 }
 
 fn load_level_data() -> LevelData {
-    // Version read from file
-    // let mut file = File::open("assets/data/level_01.json").expect("Failed to open level file");
-    // let mut contents = String::new();
-    // file.read_to_string(&mut contents)
-    //     .expect("Failed to read level file");
-
-    // Use embeded instead
     let bytes = include_bytes!("../assets/data/level_01.json");
     let contents = std::str::from_utf8(bytes).unwrap();
     let level_data: LevelData =

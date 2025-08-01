@@ -15,150 +15,66 @@
       ]
     },
     {
-      "entity_type": "box",
-      "position": [
-        4,
-        7
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        5,
-        7
-      ]
-    },
-    {
       "entity_type": "bird",
       "position": [
-        17,
-        7
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        28,
-        7
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        29,
-        7
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        30,
-        7
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        3,
-        8
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        4,
-        8
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        5,
-        8
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        6,
-        8
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        27,
-        8
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        28,
-        8
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        29,
-        8
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        30,
-        8
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        31,
-        8
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        2,
-        9
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        3,
-        9
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        4,
-        9
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        5,
-        9
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
-        6,
-        9
-      ]
-    },
-    {
-      "entity_type": "box",
-      "position": [
         7,
-        9
+        7
+      ]
+    },
+    {
+      "entity_type": "box",
+      "position": [
+        26,
+        7
+      ]
+    },
+    {
+      "entity_type": "box",
+      "position": [
+        29,
+        7
+      ]
+    },
+    {
+      "entity_type": "box",
+      "position": [
+        32,
+        7
+      ]
+    },
+    {
+      "entity_type": "box",
+      "position": [
+        26,
+        8
+      ]
+    },
+    {
+      "entity_type": "box",
+      "position": [
+        28,
+        8
+      ]
+    },
+    {
+      "entity_type": "box",
+      "position": [
+        29,
+        8
+      ]
+    },
+    {
+      "entity_type": "box",
+      "position": [
+        30,
+        8
+      ]
+    },
+    {
+      "entity_type": "box",
+      "position": [
+        32,
+        8
       ]
     },
     {
